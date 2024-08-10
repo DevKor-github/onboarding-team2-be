@@ -1,4 +1,3 @@
-// user.controller.ts
 import {
   Controller,
   Get,
@@ -9,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { UserDocument } from './user.schema';
 
 @Controller('users')
 export class UserController {
@@ -26,7 +26,9 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(id);
+    return this.userService
+      .findOne(id)
+      .then((user: UserDocument) => console.log(user.username));
   }
 
   @Put(':id')
