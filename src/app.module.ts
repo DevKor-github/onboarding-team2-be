@@ -10,7 +10,7 @@ import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `.${process.env.NODE_ENV}.env`,
+      envFilePath: `.env.${process.env.NODE_ENV}`,
       isGlobal: true, // 전체적으로 사용하기 위해
     }),
     MongooseModule.forRootAsync({
