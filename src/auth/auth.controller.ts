@@ -1,8 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody } from '@nestjs/swagger';
 import { RegisterUserDto, LoginUserDto } from '../user/dtos/user.dto';
 import { UserService } from 'src/user/user.service';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -13,21 +14,24 @@ export class AuthController {
 
   @Post('login')
   @ApiBody({ type: LoginUserDto })
-  async login(@Body() req: LoginUserDto) {
+  async login(@Body() req: LoginUserDto, @Res() res: Response) {
     const user = await this.authService.validateUser(req.userId, req.password);
     if (!user) {
-      return 'Invalid credentials';
+      return res.json('Invalid credentials');
     }
-    return this.authService.login(user);
+    const jwt = await this.authService.login(user);
+    console.log(jwt);
+    res.setHeader('Authorization', 'Bearer ' + jwt.access_token);
+    return res.json(jwt);
   }
 
   @Post('register')
   @ApiBody({ type: RegisterUserDto })
-  async register(@Body() req: RegisterUserDto) {
+  async register(@Body() req: RegisterUserDto, @Res() res: Response) {
     const user = await this.userService.findOne(req.userId);
     if (user) {
-      return 'User Id Already Exists';
+      return res.json('User Id Already Exists');
     }
-    return this.authService.register(req);
+    return res.json(await this.authService.register(req));
   }
 }
