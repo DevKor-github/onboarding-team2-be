@@ -10,7 +10,7 @@ export class User {
   @Prop({ required: true, unique: true })
   @IsString()
   @IsNotEmpty()
-  user_id: string; // 로그인할 때의 아이디
+  userId: string; // 로그인할 때의 아이디
 
   @Prop({ required: true })
   @IsString()
@@ -32,7 +32,7 @@ export class User {
 
   @Prop({ required: true, default: Date.now })
   @IsDate()
-  created_at: Date; // 생성 날짜
+  createdAt: Date; // 생성 날짜
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

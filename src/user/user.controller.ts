@@ -8,7 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserDocument } from './user.schema';
+import { UserDocument } from './schemas/user.schema';
 
 @Controller('users')
 export class UserController {
@@ -26,9 +26,9 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userService
-      .findOne(id)
-      .then((user: UserDocument) => console.log(user.username));
+    return this.userService.findOne(id).then((user: UserDocument) => {
+      if (user) console.log(user.username);
+    });
   }
 
   @Put(':id')

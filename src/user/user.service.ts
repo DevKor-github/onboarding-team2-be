@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from './user.schema';
+import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
-import { RegisterUserDto } from 'src/dto/user/registerUser.dto';
+import { RegisterUserDto } from './dtos/user.dto';
 
 @Injectable()
 export class UserService {
   private users: User[] = [
     {
-      user_id: 'admin',
+      userId: 'admin',
       username: 'admin',
       password: '$2b$10$O/OTgFsDi2TnBByk8j3MIucR/10As8TRWyHZbD8/2.vkqg7r1bqSu',
       status: false,
       tags: ['football', 'game'],
-      created_at: new Date(),
+      createdAt: new Date(),
     },
   ];
 
@@ -31,7 +31,7 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<User> {
-    return this.userModel.findOne({ user_id: id }).exec();
+    return this.userModel.findOne({ userId: id }).exec();
   }
 
   async update(id: string, updateUserDto: any): Promise<User> {
