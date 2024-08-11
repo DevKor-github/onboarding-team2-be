@@ -1,8 +1,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody } from '@nestjs/swagger';
-import { RegisterUserDto } from 'src/dto/user/registerUser.dto';
-import { LoginUserDto } from 'src/dto/user/loginUser.dto';
+import { RegisterUserDto, LoginUserDto } from '../user/dtos/user.dto';
 import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
@@ -15,7 +14,7 @@ export class AuthController {
   @Post('login')
   @ApiBody({ type: LoginUserDto })
   async login(@Body() req: LoginUserDto) {
-    const user = await this.authService.validateUser(req.user_id, req.password);
+    const user = await this.authService.validateUser(req.userId, req.password);
     if (!user) {
       return 'Invalid credentials';
     }
@@ -25,7 +24,7 @@ export class AuthController {
   @Post('register')
   @ApiBody({ type: RegisterUserDto })
   async register(@Body() req: RegisterUserDto) {
-    const user = await this.userService.findOne(req.user_id);
+    const user = await this.userService.findOne(req.userId);
     if (user) {
       return 'User Id Already Exists';
     }
