@@ -14,11 +14,8 @@ export class Chat {
   @Prop({ required: true })
   message: string;
 
-  @Prop({ default: Date.now })
+  @Prop({ default: Date.now() })
   createdAt: Date;
-
-  @Prop({ type: [Types.ObjectId], ref: 'User' })
-  readBy: Types.ObjectId[];
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

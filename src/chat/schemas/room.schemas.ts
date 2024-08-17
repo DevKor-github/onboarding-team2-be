@@ -19,8 +19,11 @@ export class Room {
   @IsString()
   tags: string[];
 
-  @Prop({ default: Date.now })
+  @Prop({ default: new Date() })
   createdAt: Date;
+
+  @Prop({ type: Map, of: Types.ObjectId }) // 사용자별로 마지막 읽은 메시지 ID를 저장
+  lastReadMessage: Map<Types.ObjectId, Types.ObjectId>; // <사용자 ID, 메세지 ID>
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

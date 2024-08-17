@@ -1,6 +1,92 @@
-import { Controller, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  RawBody,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiParam, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import {
+  ChatUserDto,
+  CreateRoomDto,
+  GetMessageDto,
+  SendMessageDto,
+  UnreadChatReqDto,
+  UnreadChatResDto,
+  UnreadMessageReqDto,
+  UnreadMessageResDto,
+} from './dtos/chat.dto';
+import { ChatDocument } from './schemas/chat.schema';
+import { ChatService } from './chat.service';
+import { RoomDocument } from './schemas/room.schemas';
 
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('chat')
-export class ChatController {}
+export class ChatController {
+  constructor(private chatService: ChatService) {}
+
+  @Post('create-chat')
+  @ApiTags('Chat')
+  @ApiBody({ type: CreateRoomDto })
+  async createChat(@Body() req: CreateRoomDto): Promise<RoomDocument> {
+    return this.chatService.createRoom(req);
+  }
+
+  @Post('unread-chat')
+  @ApiTags('Chat')
+  @ApiBody({ type: [UnreadChatReqDto] })
+  async unreadChat(
+    @Body() body: UnreadChatReqDto[],
+    @Request() req
+  ): Promise<UnreadChatResDto[]> {
+    const userId = req.user.userId;
+    let result = [] as UnreadChatResDto[];
+    for (const room of body) {
+      const roomId = room.roomId;
+      const counts = await this.chatService.getUnreadMessageCount(
+        room.roomId,
+        userId
+      );
+      result.push({ roomId: roomId, counts: counts });
+    }
+    return result;
+  }
+
+  @Get('room/get')
+  @ApiTags('Chat Room')
+  @ApiParam({
+    name: 'getMessageDto',
+    type: GetMessageDto,
+  })
+  async getMessage(@Param() req: GetMessageDto) {
+    return this.chatService.getMessages(req);
+  }
+
+  @Post('room/send')
+  @ApiTags('Chat Room')
+  @ApiBody({ type: SendMessageDto })
+  async send(@Body() req: SendMessageDto): Promise<ChatDocument> {
+    return this.chatService.sendMessage(req);
+  }
+
+  @Post('room/participate')
+  @ApiTags('Chat Room')
+  @ApiBody({ type: ChatUserDto })
+  async participate(@Body() req: ChatUserDto): Promise<RoomDocument> {
+    return this.chatService.participateChat(req);
+  }
+
+  @Post('room/unread-chat')
+  @ApiTags('Chat Room')
+  @ApiBody({ type: [UnreadMessageReqDto] })
+  async unreadMessage(
+    @Body() req: UnreadMessageReqDto
+  ): Promise<UnreadMessageResDto> {
+    return this.chatService.getUnreadCountForMessages(req);
+  }
+}
