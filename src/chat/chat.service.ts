@@ -58,10 +58,11 @@ export class ChatService {
   async getMessages(data: GetMessageDto): Promise<ChatDocument[]> {
     const { roomId, limit } = data;
     const chats = await this.chatModel
-      .find({ _id: roomId })
+      .find({ roomId: roomId })
       .sort({ createdAt: 'ascending' })
       .limit(limit)
       .exec();
+    console.log(chats);
     return chats;
   }
 
