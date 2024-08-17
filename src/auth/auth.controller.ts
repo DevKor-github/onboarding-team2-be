@@ -17,12 +17,12 @@ export class AuthController {
   async login(@Body() req: LoginUserDto, @Res() res: Response) {
     const user = await this.authService.validateUser(req.userId, req.password);
     if (!user) {
-      return res.json('Invalid credentials');
+      return res.status(401).json('Invalid credentials');
     }
     const jwt = await this.authService.login(user);
     console.log(jwt);
     res.setHeader('Authorization', 'Bearer ' + jwt.access_token);
-    return res.json(jwt);
+    return res.status(200).json(jwt);
   }
 
   @Post('register')
