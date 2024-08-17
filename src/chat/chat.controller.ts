@@ -4,11 +4,18 @@ import {
   Get,
   Param,
   Post,
+  Query,
   RawBody,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import {
   ChatUserDto,
@@ -23,6 +30,7 @@ import {
 import { ChatDocument } from './schemas/chat.schema';
 import { ChatService } from './chat.service';
 import { RoomDocument } from './schemas/room.schemas';
+import { Types } from 'mongoose';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -57,14 +65,18 @@ export class ChatController {
     return result;
   }
 
-  @Get('room/get')
+  @Get('room/get/:roomId&:limit')
   @ApiTags('Chat Room')
   @ApiParam({
-    name: 'getMessageDto',
-    type: GetMessageDto,
+    name: 'roomId',
+    type: String,
   })
-  async getMessage(@Param() req: GetMessageDto) {
-    return this.chatService.getMessages(req);
+  @ApiParam({
+    name: 'limit',
+    type: Number,
+  })
+  async getMessage(@Param() query: GetMessageDto) {
+    return this.chatService.getMessages(query);
   }
 
   @Post('room/send')
