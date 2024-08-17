@@ -21,6 +21,7 @@ import {
   ChatUserDto,
   CreateRoomDto,
   GetMessageDto,
+  MarkMessagesAsReadDto,
   SendMessageDto,
   UnreadChatReqDto,
   UnreadChatResDto,
@@ -29,7 +30,7 @@ import {
 } from './dtos/chat.dto';
 import { ChatDocument } from './schemas/chat.schema';
 import { ChatService } from './chat.service';
-import { RoomDocument } from './schemas/room.schemas';
+import { Room, RoomDocument } from './schemas/room.schemas';
 import { Types } from 'mongoose';
 
 @UseGuards(JwtAuthGuard)
@@ -52,14 +53,14 @@ export class ChatController {
     @Body() body: UnreadChatReqDto[],
     @Request() req
   ): Promise<UnreadChatResDto[]> {
-    const userId = req.user.userId;
+    const userId = req.user._id;
     let result = [] as UnreadChatResDto[];
     for (const room of body) {
       const roomId = room.roomId;
-      const counts = await this.chatService.getUnreadMessageCount(
-        room.roomId,
-        userId
-      );
+      const counts = await this.chatService.getUnreadMessageCount({
+        roomId: roomId,
+        userId: userId,
+      });
       result.push({ roomId: roomId, counts: counts });
     }
     return result;
@@ -95,10 +96,22 @@ export class ChatController {
 
   @Post('room/unread-chat')
   @ApiTags('Chat Room')
-  @ApiBody({ type: [UnreadMessageReqDto] })
+  @ApiBody({ type: UnreadMessageReqDto })
   async unreadMessage(
     @Body() req: UnreadMessageReqDto
   ): Promise<UnreadMessageResDto> {
     return this.chatService.getUnreadCountForMessages(req);
+  }
+
+  @Post('room/read-message')
+  @ApiTags('Chat Room')
+  @ApiBody({ type: MarkMessagesAsReadDto })
+  async markMessageAsRead(
+    @Body() body: MarkMessagesAsReadDto,
+    @Request() req
+  ): Promise<RoomDocument> {
+    const userId = req.user._id;
+    const data = { ...body, userId };
+    return this.chatService.markMessagesAsRead(data);
   }
 }

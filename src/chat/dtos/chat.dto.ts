@@ -25,7 +25,6 @@ export class ChatUserDto {
 
 export class MarkMessagesAsReadDto {
   roomId: Types.ObjectId;
-  userId: Types.ObjectId;
   lastMessageId: Types.ObjectId;
 }
 
@@ -40,6 +39,7 @@ export class UnreadChatResDto {
 
 export class UnreadMessageReqDto {
   roomId: Types.ObjectId;
+  limit: number;
 }
 
 export class UnreadMessageResDto {
