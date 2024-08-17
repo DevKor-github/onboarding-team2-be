@@ -14,7 +14,7 @@ import { JwtStrategy } from './jwt.strategy';
     PassportModule,
     JwtModule.register({
       secret: 'secretKey',
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '30m' }, // 환경변수 설정
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
