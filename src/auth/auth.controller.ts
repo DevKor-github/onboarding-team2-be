@@ -19,7 +19,7 @@ export class AuthController {
   async login(@Body() req: LoginUserDto, @Res() res: Response) {
     const user = await this.authService.validateUser(req.userId, req.password);
     if (!user) {
-      return res.json('Invalid credentials');
+      return res.status(401).json('Invalid credentials');
     }
     console.log();
     const payload: JwtTokenDto = {
