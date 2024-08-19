@@ -23,7 +23,7 @@ export class AuthController {
     }
     console.log();
     const payload: JwtTokenDto = {
-      id: user._id,
+      _id: user._id,
       userId: user.userId,
       username: user.username,
     };

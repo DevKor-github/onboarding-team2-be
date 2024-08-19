@@ -4,27 +4,30 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { errorHandler } from './util/errorHandler';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['log', 'warn', 'error'],
+  });
 
   const options = new DocumentBuilder()
     .setTitle('TagTing')
     .setDescription('DevKor onboarding TEAM2 ')
     .setVersion('1.0')
-    .addServer('http://localhost:3000/', 'Local environment')
+    .addServer(`${process.env.DEV_API_URI}`, 'Dev environment')
+    .addServer(`${process.env.PROD_API_URI}`, 'Prod environment')
     .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api-docs', app, document);
-  
+  SwaggerModule.setup(`${process.env.SWAGGER_ENDPOINT}`, app, document);
+
   app.enableCors({
     origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  
+
   app.use(errorHandler);
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT);
 }
 bootstrap();
