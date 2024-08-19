@@ -33,7 +33,7 @@ export class AuthService {
 
   async login(user: JwtTokenDto) {
     const payload = {
-      _id: user.id,
+      _id: user._id,
       userId: user.userId,
       username: user.username,
     };

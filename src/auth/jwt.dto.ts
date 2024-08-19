@@ -2,7 +2,7 @@ import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class JwtTokenDto {
-  readonly id: Types.ObjectId;
+  readonly _id: Types.ObjectId;
 
   @IsString()
   @IsNotEmpty()

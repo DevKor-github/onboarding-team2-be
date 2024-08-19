@@ -13,6 +13,12 @@ import {
   UnreadMessageResDto,
 } from './dtos/chat.dto';
 
+interface MarkMessagesAsRead {
+  roomId: Types.ObjectId;
+  userId: Types.ObjectId;
+  lastMessageId: Types.ObjectId;
+}
+
 @Injectable()
 export class ChatService {
   constructor(
@@ -20,12 +26,6 @@ export class ChatService {
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>
   ) {}
 
-  /**
-   *
-   * @param data
-   * @
-   * @returns
-   */
   async createRoom(data: CreateRoomDto): Promise<RoomDocument> {
     const { creator, isGroup, name, tags } = data;
     const room = await this.roomModel.create({
@@ -40,13 +40,23 @@ export class ChatService {
     return room;
   }
 
-  async participateChat(data: ChatUserDto): Promise<RoomDocument> {
+  async joinChat(data: ChatUserDto): Promise<RoomDocument> {
     const { roomId, userId } = data;
     const room = await this.roomModel.findOne({ _id: roomId });
     await room.participants.push(userId);
     await room.lastReadMessage.set(userId, null);
-    await room.save();
-    return room;
+    return room.save();
+  }
+
+  async leavChat(data: ChatUserDto): Promise<RoomDocument> {
+    const { roomId, userId } = data;
+    const room = await this.roomModel.findOne({ _id: roomId });
+    room.participants = room.participants.filter((user) => {
+      if (user !== userId) return user;
+    });
+    console.log(room);
+    await room.lastReadMessage.delete(userId);
+    return room.save();
   }
 
   /**
@@ -66,7 +76,7 @@ export class ChatService {
     return chats;
   }
 
-  async markMessagesAsRead(message): Promise<RoomDocument> {
+  async markMessagesAsRead(message: MarkMessagesAsRead): Promise<RoomDocument> {
     const { roomId, userId, lastMessageId } = message;
     const room = await this.roomModel.findById(roomId);
     room.lastReadMessage.set(userId, lastMessageId);
@@ -150,6 +160,7 @@ export class ChatService {
       ...sended,
       createdAt: new Date(),
     } as ChatDocument;
+    console.log(sended);
     return await this.chatModel.create(sended);
   }
 }
