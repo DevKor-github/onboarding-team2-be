@@ -11,16 +11,20 @@ import {
 import { Server } from 'socket.io';
 import { ChatService } from '../chat.service';
 import { Injectable, Logger, UseGuards } from '@nestjs/common';
-import { ChatUserDto, SendMessageDto } from '../dtos/chat.dto';
+import { ChatUserDto, UnreadChatReqDto } from '../dtos/chat.dto';
 import { WsJwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { CustomSocket } from './chat.gateway.interface';
-import { MarkAsReadAndUnreadMessagesReqDto } from './chat.gateway.dto';
+import {
+  MarkAsReadAndUnreadMessagesReqDto,
+  WsSendMessageDto,
+} from './chat.gateway.dto';
+import { Types } from 'mongoose';
 
 @Injectable()
 @WebSocketGateway({
   namespace: 'chat',
   cors: {
-    origin: (req, callback) => {
+    origin: (_, callback) => {
       const allowedOrigin = process.env.CORS_ORIGIN || '*';
       callback(null, allowedOrigin);
     },
@@ -56,24 +60,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('sendMessage')
   async handleMessage(
-    @MessageBody() message: SendMessageDto,
+    @MessageBody() message: WsSendMessageDto,
     @ConnectedSocket() client: CustomSocket
   ) {
     try {
-      // 모든 클라이언트에게 저장된 메시지 브로드캐스트
-      const sendedMessage = await this.chatService.sendMessage(message);
-      this.server
-        .to(`room-${message.roomId}`)
-        .emit('sendMessage', sendedMessage);
+      const userId: Types.ObjectId = client.user._id;
+      const data = { ...message, senderId: userId };
 
-      // 새로운 메세지를 보낸 채팅방의 읽지 않은 메세지 수 브로드캐스트
-      const unreadCount = await this.chatService.getUnreadMessageCount({
-        roomId: message.roomId,
-        userId: client.user._id,
-      });
+      // 모든 클라이언트에게 저장된 메시지 브로드캐스트
+      const sendedMessage = await this.chatService.sendMessage(data);
       this.server
         .to(`room-${message.roomId}`)
-        .emit('chatUnreadCount', unreadCount);
+        .emit('MessageSend', sendedMessage);
+
+      // 새로운 메세지를 보낸 채팅방의 읽지 않은 메세지 수를 다시 계산하라고 브로드캐스트
+      this.server.to(`room-${message.roomId}`).emit('chatUnreadCount');
     } catch {
       throw new WsException('Error with sending message');
     }
@@ -94,12 +95,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.chatService.markMessagesAsRead(data);
       const counts = await this.chatService.getUnreadCountForMessages(data);
 
-      this.server.to(`room-${data.roomId}`).emit('messageRead', counts);
+      // messageRead가 오면 클라이언트에서 현재 읽지 않은 메세지는 몇 개인지 요청하는 이벤트를 날리도록 하는 응답 이벤트 전송
+      this.server.to(`room-${data.roomId}`).emit('messageRead');
     } catch {
       throw new WsException('Error with read message');
     }
   }
 
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('unreadMessages')
+  async handleUnreadMessage(
+    @MessageBody() unreadInfo: UnreadChatReqDto,
+    @ConnectedSocket() client: CustomSocket
+  ) {
+    try {
+      const userId = client.user._id;
+      const data = { ...unreadInfo, userId: userId };
+      const counts = await this.chatService.getUnreadMessageCount(data);
+
+      client.emit('chatUnreadCount', counts);
+    } catch {
+      throw new WsException('Error with count unread messages');
+    }
+  }
+
+  /**
+   * 이미 참여 중인 채팅방 서버에 입장할 때
+   * @param joinInfo
+   * @param client
+   */
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
@@ -107,11 +131,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: CustomSocket
   ) {
     try {
-      await this.chatService.joinChat(joinInfo);
       client.join(`room-${joinInfo.roomId}`);
       this.server.to(String(joinInfo.roomId)).emit('userJoined', joinInfo);
     } catch {
       throw new WsException('Error with joining');
+    }
+  }
+
+  @UseGuards(WsJwtAuthGuard)
+  @SubscribeMessage('newlyJoinRoom')
+  async handleNewlyJoinRoom(
+    @MessageBody() joinInfo: ChatUserDto,
+    @ConnectedSocket() client: CustomSocket
+  ) {
+    try {
+      await this.chatService.joinChat(joinInfo);
+      client.join(`room-${joinInfo.roomId}`);
+      this.server.to(String(joinInfo.roomId)).emit('newUserJoined', joinInfo);
+    } catch {
+      throw new WsException('Error with new joining');
     }
   }
 

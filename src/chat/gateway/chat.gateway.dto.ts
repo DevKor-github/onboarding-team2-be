@@ -5,3 +5,8 @@ export class MarkAsReadAndUnreadMessagesReqDto {
   lastMessageId: Types.ObjectId;
   limit: number;
 }
+
+export class WsSendMessageDto {
+  roomId: Types.ObjectId;
+  message: string;
+}
