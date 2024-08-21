@@ -12,6 +12,7 @@ import { UserService } from './user.service';
 import { UserDocument } from './schemas/user.schema';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Types } from 'mongoose';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -31,7 +32,7 @@ export class UserController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: Types.ObjectId) {
     return this.userService.findOne(id).then((user: UserDocument) => {
       if (user) console.log(user.username);
     });
