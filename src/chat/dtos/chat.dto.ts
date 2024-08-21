@@ -15,6 +15,7 @@ export class SendMessageDto {
 
 export class GetMessageDto {
   roomId: Types.ObjectId;
+  offset: number;
   limit: number;
 }
 
@@ -39,9 +40,22 @@ export class UnreadChatResDto {
 
 export class UnreadMessageReqDto {
   roomId: Types.ObjectId;
+  offset: number;
   limit: number;
 }
 
 export class UnreadMessageResDto {
   [roomId: string]: number;
+}
+
+export class GetChatReqDto {
+  offset: number;
+  limit: number;
+}
+
+export class ChatResDto {
+  roomId: Types.ObjectId;
+  name: string;
+  tags: string[];
+  size: number;
 }

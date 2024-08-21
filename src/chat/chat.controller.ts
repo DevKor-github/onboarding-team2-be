@@ -12,23 +12,28 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import {
   ChatUserDto,
   CreateRoomDto,
+  GetChatReqDto,
   GetMessageDto,
   MarkMessagesAsReadDto,
   SendMessageDto,
+  ChatResDto,
   UnreadChatReqDto,
   UnreadChatResDto,
   UnreadMessageReqDto,
   UnreadMessageResDto,
 } from './dtos/chat.dto';
-import { ChatDocument } from './schemas/chat.schema';
 import { ChatService } from './chat.service';
-import { Room, RoomDocument } from './schemas/room.schemas';
+import { RoomDocument } from './schemas/room.schemas';
+import { UserService } from 'src/user/user.service';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller('chat')
 export class ChatController {
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private userService: UserService
+  ) {}
 
   @Post('create-chat')
   @ApiTags('Chat')
@@ -62,6 +67,10 @@ export class ChatController {
   @ApiParam({
     name: 'roomId',
     type: String,
+  })
+  @ApiParam({
+    name: 'offset',
+    type: Number,
   })
   @ApiParam({
     name: 'limit',
@@ -111,5 +120,38 @@ export class ChatController {
     const userId = req.user._id;
     const data = { ...body, userId };
     return this.chatService.markMessagesAsRead(data);
+  }
+
+  @Get('room/total-chat')
+  @ApiTags('Chat Room')
+  @ApiParam({
+    name: 'offset',
+    type: Number,
+  })
+  @ApiParam({
+    name: 'limit',
+    type: Number,
+  })
+  async getTotalChat(@Param() query: GetChatReqDto): Promise<ChatResDto[]> {
+    return this.chatService.getTotalChat(query);
+  }
+
+  @Get('room/joined-chat')
+  @ApiTags('Chat Room')
+  @ApiParam({
+    name: 'offset',
+    type: Number,
+  })
+  @ApiParam({
+    name: 'limit',
+    type: Number,
+  })
+  async getJoinedChat(
+    @Param() query: GetChatReqDto,
+    @Request() req
+  ): Promise<ChatResDto[]> {
+    const userId = req.user._id;
+    const roomIds = (await this.userService.findOne(userId)).chats;
+    return this.chatService.getJoinChat(roomIds, query);
   }
 }

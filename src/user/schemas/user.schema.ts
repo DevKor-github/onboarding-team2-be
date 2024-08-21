@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { IsBoolean, IsDate, IsNotEmpty, IsString } from 'class-validator';
 import * as bcrypt from 'bcrypt';
 
@@ -29,6 +29,9 @@ export class User {
   @Prop({ type: [String] })
   @IsString()
   tags: string[]; // 사용자 태그
+
+  @Prop({ types: [Types.ObjectId], ref: 'Room' })
+  chats: Types.ObjectId[];
 
   @Prop({ required: true, default: Date.now })
   @IsDate()

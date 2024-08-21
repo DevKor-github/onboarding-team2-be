@@ -1,4 +1,4 @@
-import { Injectable, Logger, Type } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Chat, ChatDocument } from './schemas/chat.schema';
 import { Model, Types } from 'mongoose';
@@ -6,8 +6,10 @@ import { Room, RoomDocument } from './schemas/room.schemas';
 import {
   ChatUserDto,
   CreateRoomDto,
+  GetChatReqDto,
   GetMessageDto,
   SendMessageDto,
+  ChatResDto,
   UnreadMessageReqDto,
   UnreadMessageResDto,
 } from './dtos/chat.dto';
@@ -165,5 +167,36 @@ export class ChatService {
     );
   }
 
-  // TODO1: 채팅방 리스트 조회
+  async getTotalChat(data: GetChatReqDto): Promise<ChatResDto[]> {
+    const { offset, limit } = data;
+    const rooms = await this.roomModel.find().skip(offset).limit(limit);
+    const result = [];
+    rooms.forEach((room) => {
+      result.push({
+        roomId: room._id,
+        name: room.name,
+        tags: room.tags,
+        size: room.participants.length,
+      });
+    });
+    return result;
+  }
+
+  async getJoinChat(
+    roomIds: Types.ObjectId[],
+    data: GetChatReqDto
+  ): Promise<ChatResDto[]> {
+    const { offset, limit } = data;
+    const result = [];
+    roomIds.forEach(async (roomId) => {
+      const room = await this.roomModel.findById(roomId);
+      result.push({
+        roomId: room._id,
+        name: room.name,
+        tags: room.tags,
+        size: room.participants.length,
+      });
+    });
+    return result;
+  }
 }

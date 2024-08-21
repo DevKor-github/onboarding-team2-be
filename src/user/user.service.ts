@@ -13,6 +13,7 @@ export class UserService {
       username: 'admin',
       password: '$2b$10$O/OTgFsDi2TnBByk8j3MIucR/10As8TRWyHZbD8/2.vkqg7r1bqSu',
       status: false,
+      chats: [],
       tags: ['football', 'game'],
       createdAt: new Date(),
     },
@@ -31,7 +32,7 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<UserDocument> {
-    return await this.userModel.findOne({ userId: id }).exec();
+    return await this.userModel.findOne({ _id: id }).exec();
   }
 
   async update(id: string, updateUserDto: any): Promise<User> {
