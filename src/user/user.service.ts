@@ -32,8 +32,12 @@ export class UserService {
     return this.userModel.find().exec();
   }
 
-  async findOne(id: string): Promise<UserDocument> {
+  async findOne(id: Types.ObjectId): Promise<UserDocument> {
     return await this.userModel.findOne({ _id: id }).exec();
+  }
+
+  async findByUserId(userId: string): Promise<UserDocument> {
+    return await this.userModel.findOne({ userId: userId }).exec();
   }
 
   async update(id: string, updateUserDto: any): Promise<User> {

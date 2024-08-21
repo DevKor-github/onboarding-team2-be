@@ -35,7 +35,7 @@ export class AuthController {
   @Post('register')
   @ApiBody({ type: RegisterUserDto })
   async register(@Body() req: RegisterUserDto, @Res() res: Response) {
-    const user = await this.userService.findOne(req.userId);
+    const user = await this.userService.findByUserId(req.userId);
     if (user) {
       return res.json('User Id Already Exists');
     }
