@@ -24,6 +24,7 @@ async function bootstrap() {
     origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
+    exposedHeaders: ['authorization'],
   });
 
   app.use(errorHandler);

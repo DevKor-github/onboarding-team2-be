@@ -1,4 +1,4 @@
-import { Injectable, Type } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Chat, ChatDocument } from './schemas/chat.schema';
 import { Model, Types } from 'mongoose';
@@ -6,9 +6,10 @@ import { Room, RoomDocument } from './schemas/room.schemas';
 import {
   ChatUserDto,
   CreateRoomDto,
+  GetChatReqDto,
   GetMessageDto,
-  MarkMessagesAsReadDto,
   SendMessageDto,
+  ChatResDto,
   UnreadMessageReqDto,
   UnreadMessageResDto,
 } from './dtos/chat.dto';
@@ -25,6 +26,7 @@ export class ChatService {
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>
   ) {}
+  private logger: Logger = new Logger(ChatService.name);
 
   async createRoom(data: CreateRoomDto): Promise<RoomDocument> {
     const { creator, isGroup, name, tags } = data;
@@ -36,8 +38,7 @@ export class ChatService {
       createdAt: new Date(),
       lastReadMessage: { creator: null },
     });
-    await room.save();
-    return room;
+    return await room.save();
   }
 
   async joinChat(data: ChatUserDto): Promise<RoomDocument> {
@@ -48,13 +49,12 @@ export class ChatService {
     return room.save();
   }
 
-  async leavChat(data: ChatUserDto): Promise<RoomDocument> {
+  async leaveChat(data: ChatUserDto): Promise<RoomDocument> {
     const { roomId, userId } = data;
     const room = await this.roomModel.findOne({ _id: roomId });
     room.participants = room.participants.filter((user) => {
       if (user !== userId) return user;
     });
-    console.log(room);
     await room.lastReadMessage.delete(userId);
     return room.save();
   }
@@ -72,7 +72,6 @@ export class ChatService {
       .sort({ createdAt: 'ascending' })
       .limit(limit)
       .exec();
-    console.log(chats);
     return chats;
   }
 
@@ -153,14 +152,51 @@ export class ChatService {
     }
     return unreadCounts;
   }
-  // TODO: 전체 조회 시 count 갱신과 채팅 하나 입력마다 새로 계산되는 것 다르게 구현
 
-  async sendMessage(sended: SendMessageDto): Promise<ChatDocument> {
+  async sendMessage(sended: SendMessageDto): Promise<RoomDocument> {
     sended = {
       ...sended,
       createdAt: new Date(),
     } as ChatDocument;
-    console.log(sended);
-    return await this.chatModel.create(sended);
+    return await this.chatModel.create(sended).then((chat) =>
+      this.markMessagesAsRead({
+        roomId: sended.roomId,
+        userId: sended.senderId,
+        lastMessageId: chat._id as Types.ObjectId,
+      } as MarkMessagesAsRead)
+    );
+  }
+
+  async getTotalChat(data: GetChatReqDto): Promise<ChatResDto[]> {
+    const { offset, limit } = data;
+    const rooms = await this.roomModel.find().skip(offset).limit(limit);
+    const result = [];
+    rooms.forEach((room) => {
+      result.push({
+        roomId: room._id,
+        name: room.name,
+        tags: room.tags,
+        size: room.participants.length,
+      });
+    });
+    return result;
+  }
+
+  async getJoinChat(
+    roomIds: Types.ObjectId[],
+    data: GetChatReqDto
+  ): Promise<ChatResDto[]> {
+    const { offset, limit } = data;
+    const result = [];
+    roomIds.forEach(async (roomId) => {
+      const room = await this.roomModel.findById(roomId);
+      result.push({
+        roomId: room._id,
+        name: room.name,
+        tags: room.tags,
+        size: room.participants.length,
+      });
+    });
+    return result;
   }
 }
