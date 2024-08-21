@@ -90,15 +90,17 @@ export class ChatController {
   @Post('room/join')
   @ApiTags('Chat Room')
   @ApiBody({ type: ChatUserDto })
-  async join(@Body() req: ChatUserDto): Promise<RoomDocument> {
-    return this.chatService.joinChat(req);
+  async join(@Body() body: ChatUserDto): Promise<RoomDocument> {
+    this.userService.joinChat(body);
+    return this.chatService.joinChat(body);
   }
 
   @Post('room/leave')
   @ApiTags('Chat Room')
   @ApiBody({ type: ChatUserDto })
-  async leave(@Body() req: ChatUserDto): Promise<RoomDocument> {
-    return this.chatService.leaveChat(req);
+  async leave(@Body() body: ChatUserDto): Promise<RoomDocument> {
+    this.userService.leaveChat(body);
+    return this.chatService.leaveChat(body);
   }
 
   @Post('room/unread-chat')

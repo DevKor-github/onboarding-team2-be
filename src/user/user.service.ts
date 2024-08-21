@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { RegisterUserDto } from './dtos/user.dto';
+import { ChatUserDto } from 'src/chat/dtos/chat.dto';
 
 @Injectable()
 export class UserService {
@@ -47,5 +48,19 @@ export class UserService {
 
   async validatePassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);
+  }
+
+  async joinChat(data: ChatUserDto): Promise<UserDocument> {
+    const { userId, roomId } = data;
+    const user = await this.userModel.findById(userId);
+    user.chats.push(roomId);
+    return user.save();
+  }
+
+  async leaveChat(data: ChatUserDto): Promise<UserDocument> {
+    const { userId, roomId } = data;
+    const user = await this.userModel.findById(userId);
+    user.chats = user.chats.filter((chat) => chat !== roomId);
+    return user.save();
   }
 }
