@@ -27,7 +27,7 @@ import {
 import { ChatService } from './chat.service';
 import { RoomDocument } from './schemas/room.schemas';
 import { UserService } from 'src/user/user.service';
-import { Chat, ChatDocument } from './schemas/chat.schema';
+import { ChatDocument } from './schemas/chat.schema';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -80,7 +80,7 @@ export class ChatController {
     name: 'limit',
     type: Number,
   })
-  async getMessage(@Param() query: GetMessageDto) {
+  async getMessage(@Param() query: GetMessageDto): Promise<GetMessageResDto[]> {
     const messages = await this.chatService.getMessages(query);
     const result = await Promise.all(
       messages.map(async (message: ChatDocument) => {
@@ -93,7 +93,7 @@ export class ChatController {
           senderName: senderName,
           message: message.message,
           createdAt: message.createdAt,
-        };
+        } as GetMessageResDto;
       })
     );
     return result;
