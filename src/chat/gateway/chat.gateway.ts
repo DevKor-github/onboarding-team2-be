@@ -110,7 +110,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.chatService.markMessagesAsRead(data);
       const counts = await this.chatService.getUnreadCountForMessages(data);
 
-      // messageRead가 오면 클라이언트에서 몇 명이 각각의 메세지를 읽지 않았는지 계산하는 이벤트 송신
       this.server.to(`room-${data.roomId}`).emit('messageRead', counts);
     } catch {
       throw new WsException('Error with read message');
@@ -165,6 +164,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: CustomSocket
   ) {
     try {
+      await this.userService.joinChat(joinInfo);
       await this.chatService.joinChat(joinInfo);
       client.join(`room-${joinInfo.roomId}`);
       this.server.to(`room-${joinInfo.roomId}`).emit('newUserJoined', joinInfo);
@@ -180,11 +180,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('leaveRoom')
-  handleLeaveRoom(
+  async handleLeaveRoom(
     @MessageBody() leaveInfo: ChatUserDto,
     @ConnectedSocket() client: CustomSocket
   ) {
     try {
+      await this.userService.leaveChat(leaveInfo);
+      await this.chatService.leaveChat(leaveInfo);
+
       client.leave(`room-${leaveInfo.roomId}`);
       this.server.to(`room-${leaveInfo.roomId}`).emit('userLeft', leaveInfo);
     } catch {
