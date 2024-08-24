@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   Post,
   Request,
@@ -21,11 +22,12 @@ import {
   UnreadChatResDto,
   UnreadMessageReqDto,
   UnreadMessageResDto,
+  GetMessageResDto,
 } from './dtos/chat.dto';
 import { ChatService } from './chat.service';
 import { RoomDocument } from './schemas/room.schemas';
 import { UserService } from 'src/user/user.service';
-import { ChatDocument } from './schemas/chat.schema';
+import { Chat, ChatDocument } from './schemas/chat.schema';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -35,6 +37,7 @@ export class ChatController {
     private chatService: ChatService,
     private userService: UserService
   ) {}
+  private logger: Logger = new Logger(ChatController.name);
 
   @Post('create-chat')
   @ApiTags('Chat')
@@ -78,7 +81,22 @@ export class ChatController {
     type: Number,
   })
   async getMessage(@Param() query: GetMessageDto) {
-    return this.chatService.getMessages(query);
+    const messages = await this.chatService.getMessages(query);
+    const result = await Promise.all(
+      messages.map(async (message: ChatDocument) => {
+        const sender = await this.userService.findOne(message.senderId);
+        const senderName = sender.username;
+        return {
+          _id: message._id,
+          roomId: message.roomId,
+          senderId: message.senderId,
+          senderName: senderName,
+          message: message.message,
+          createdAt: message.createdAt,
+        };
+      })
+    );
+    return result;
   }
 
   @Post('room/send')

@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { Chat } from '../schemas/chat.schema';
 
 export class CreateRoomDto {
   creator: Types.ObjectId;
@@ -17,6 +18,15 @@ export class GetMessageDto {
   roomId: Types.ObjectId;
   offset: number;
   limit: number;
+}
+
+export class GetMessageResDto {
+  _id: Types.ObjectId;
+  roomId: Types.ObjectId;
+  senderId: Types.ObjectId;
+  senderName: string;
+  message: string;
+  createdAt: Date;
 }
 
 export class ChatUserDto {
