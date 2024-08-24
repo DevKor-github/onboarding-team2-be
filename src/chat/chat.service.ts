@@ -69,7 +69,7 @@ export class ChatService {
     const { roomId, limit } = data;
     const chats = await this.chatModel
       .find({ roomId: roomId })
-      .sort({ createdAt: 'ascending' })
+      .sort({ createdAt: 'descending' })
       .limit(limit)
       .exec();
     return chats;
@@ -123,7 +123,7 @@ export class ChatService {
     // 해당 방에 존재하는 모든 메시지들을 가져옴
     const messages = await this.chatModel
       .find({ roomId: roomId })
-      .sort({ createdAt: 'ascending' })
+      .sort({ createdAt: 'descending' })
       .limit(limit)
       .exec();
 
@@ -187,16 +187,20 @@ export class ChatService {
     data: GetChatReqDto
   ): Promise<ChatResDto[]> {
     const { offset, limit } = data;
-    const result = [];
-    roomIds.forEach(async (roomId) => {
-      const room = await this.roomModel.findById(roomId);
-      result.push({
-        roomId: room._id,
-        name: room.name,
-        tags: room.tags,
-        size: room.participants.length,
-      });
-    });
+    const result = await Promise.all(
+      roomIds.map(async (roomId) => {
+        const room = await this.roomModel
+          .findById(roomId)
+          .skip(offset)
+          .limit(limit);
+        return {
+          roomId: room._id,
+          name: room.name,
+          tags: room.tags,
+          size: room.participants.length,
+        } as ChatResDto;
+      })
+    );
     return result;
   }
 }
