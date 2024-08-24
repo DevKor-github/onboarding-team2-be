@@ -187,16 +187,20 @@ export class ChatService {
     data: GetChatReqDto
   ): Promise<ChatResDto[]> {
     const { offset, limit } = data;
-    const result = [];
-    roomIds.forEach(async (roomId) => {
-      const room = await this.roomModel.findById(roomId);
-      result.push({
-        roomId: room._id,
-        name: room.name,
-        tags: room.tags,
-        size: room.participants.length,
-      });
-    });
+    const result = await Promise.all(
+      roomIds.map(async (roomId) => {
+        const room = await this.roomModel
+          .findById(roomId)
+          .skip(offset)
+          .limit(limit);
+        return {
+          roomId: room._id,
+          name: room.name,
+          tags: room.tags,
+          size: room.participants.length,
+        } as ChatResDto;
+      })
+    );
     return result;
   }
 }
