@@ -25,6 +25,7 @@ import {
 import { ChatService } from './chat.service';
 import { RoomDocument } from './schemas/room.schemas';
 import { UserService } from 'src/user/user.service';
+import { ChatDocument } from './schemas/chat.schema';
 
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -83,7 +84,7 @@ export class ChatController {
   @Post('room/send')
   @ApiTags('Chat Room')
   @ApiBody({ type: SendMessageDto })
-  async send(@Body() req: SendMessageDto): Promise<RoomDocument> {
+  async send(@Body() req: SendMessageDto): Promise<ChatDocument> {
     return this.chatService.sendMessage(req);
   }
 

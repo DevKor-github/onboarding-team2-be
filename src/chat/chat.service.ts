@@ -153,18 +153,18 @@ export class ChatService {
     return unreadCounts;
   }
 
-  async sendMessage(sended: SendMessageDto): Promise<RoomDocument> {
+  async sendMessage(sended: SendMessageDto): Promise<ChatDocument> {
     sended = {
       ...sended,
       createdAt: new Date(),
     } as ChatDocument;
-    return await this.chatModel.create(sended).then((chat) =>
-      this.markMessagesAsRead({
-        roomId: sended.roomId,
-        userId: sended.senderId,
-        lastMessageId: chat._id as Types.ObjectId,
-      } as MarkMessagesAsRead)
-    );
+    const chat = await this.chatModel.create(sended);
+    await this.markMessagesAsRead({
+      roomId: sended.roomId,
+      userId: sended.senderId,
+      lastMessageId: chat._id as Types.ObjectId,
+    } as MarkMessagesAsRead);
+    return chat;
   }
 
   async getTotalChat(data: GetChatReqDto): Promise<ChatResDto[]> {

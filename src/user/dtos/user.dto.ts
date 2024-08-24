@@ -26,3 +26,11 @@ export class LoginUserDto {
   @IsString()
   readonly password: string;
 }
+
+export class changePasswordDto {
+  @IsString()
+  readonly prevPass: string;
+
+  @IsString()
+  readonly newPass: string;
+}

@@ -31,7 +31,7 @@ export class User {
   tags: string[]; // 사용자 태그
 
   @Prop({ types: [Types.ObjectId], ref: 'Room' })
-  chats: Types.ObjectId[];
+  chats: Types.ObjectId[]; // 참여 중인 채팅방
 
   @Prop({ required: true, default: Date.now })
   @IsDate()

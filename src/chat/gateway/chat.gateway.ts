@@ -39,7 +39,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   afterInit(server: Server) {
-    this.logger.log('서버 시작');
+    this.logger.log(server, '서버 시작');
 
     // setInterval(() => {
     //   this.checkInactiveClients();
@@ -95,8 +95,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.chatService.markMessagesAsRead(data);
       const counts = await this.chatService.getUnreadCountForMessages(data);
 
-      // messageRead가 오면 클라이언트에서 현재 읽지 않은 메세지는 몇 개인지 요청하는 이벤트를 날리도록 하는 응답 이벤트 전송
-      this.server.to(`room-${data.roomId}`).emit('messageRead');
+      // messageRead가 오면 클라이언트에서 몇 명이 각각의 메세지를 읽지 않았는지 계산하는 이벤트 송신
+      this.server.to(`room-${data.roomId}`).emit('messageRead', counts);
     } catch {
       throw new WsException('Error with read message');
     }
@@ -132,12 +132,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       client.join(`room-${joinInfo.roomId}`);
-      this.server.to(String(joinInfo.roomId)).emit('userJoined', joinInfo);
+      this.server.to(`room-${joinInfo.roomId}`).emit('userJoined', joinInfo);
     } catch {
       throw new WsException('Error with joining');
     }
   }
 
+  /**
+   * 사용자가 새로운 채팅방 입장할 때
+   * @param joinInfo
+   * @param client
+   */
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('newlyJoinRoom')
   async handleNewlyJoinRoom(
@@ -147,12 +152,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       await this.chatService.joinChat(joinInfo);
       client.join(`room-${joinInfo.roomId}`);
-      this.server.to(String(joinInfo.roomId)).emit('newUserJoined', joinInfo);
+      this.server.to(`room-${joinInfo.roomId}`).emit('newUserJoined', joinInfo);
     } catch {
       throw new WsException('Error with new joining');
     }
   }
 
+  /**
+   * 채팅방에서 탈퇴할 때 (단순 뒤로가기 X)
+   * @param leaveInfo
+   * @param client
+   */
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(
