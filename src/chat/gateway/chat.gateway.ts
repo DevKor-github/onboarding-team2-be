@@ -11,7 +11,11 @@ import {
 import { Server } from 'socket.io';
 import { ChatService } from '../chat.service';
 import { Injectable, Logger, UseGuards } from '@nestjs/common';
-import { ChatUserDto, UnreadChatReqDto } from '../dtos/chat.dto';
+import {
+  ChatUserDto,
+  GetMessageResDto,
+  UnreadChatReqDto,
+} from '../dtos/chat.dto';
 import { WsJwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { CustomSocket } from './chat.gateway.interface';
 import {
@@ -19,6 +23,7 @@ import {
   WsSendMessageDto,
 } from './chat.gateway.dto';
 import { Types } from 'mongoose';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 @WebSocketGateway({
@@ -31,7 +36,10 @@ import { Types } from 'mongoose';
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly userService: UserService
+  ) {}
   private logger: Logger = new Logger(ChatGateway.name);
   private clients: Map<string, CustomSocket> = new Map(); // 소켓 연결된 클라이언트 추적
 
@@ -69,9 +77,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // 모든 클라이언트에게 저장된 메시지 브로드캐스트
       const sendedMessage = await this.chatService.sendMessage(data);
-      this.server
-        .to(`room-${message.roomId}`)
-        .emit('MessageSend', sendedMessage);
+      const sender = await this.userService.findOne(sendedMessage.senderId);
+      const result = {
+        _id: sendedMessage._id,
+        roomId: sendedMessage.roomId,
+        senderId: sendedMessage.senderId,
+        senderName: sender.username,
+        message: sendedMessage.message,
+        createdAt: sendedMessage.createdAt,
+      } as GetMessageResDto;
+      this.server.to(`room-${message.roomId}`).emit('MessageSend', result);
 
       // 새로운 메세지를 보낸 채팅방의 읽지 않은 메세지 수를 다시 계산하라고 브로드캐스트
       this.server.to(`room-${message.roomId}`).emit('chatUnreadCount');
