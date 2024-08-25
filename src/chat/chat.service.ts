@@ -80,11 +80,9 @@ export class ChatService {
   async markMessagesAsRead(message: MarkMessagesAsRead): Promise<RoomDocument> {
     const { roomId, userId, lastMessageId } = message;
     const room = await this.roomModel.findById(roomId);
-    const lastReadMessage = room.lastReadMessage;
     const id: string = userId as any;
-    lastReadMessage.set(id, lastMessageId);
-    room.lastReadMessage = lastReadMessage;
-    return room.save();
+    room.lastReadMessage.set(id, lastMessageId);
+    return await room.save();
   }
 
   async getUnreadMessageCount(data: ChatUserDto): Promise<number> {
@@ -165,8 +163,8 @@ export class ChatService {
       roomId: sended.roomId,
       userId: sended.senderId,
       lastMessageId: chat._id as Types.ObjectId,
-    } as MarkMessagesAsRead).then((room) => room.save());
-    return chat.save();
+    } as MarkMessagesAsRead);
+    return await chat.save();
   }
 
   async getTotalChat(data: GetChatReqDto): Promise<ChatResDto[]> {
@@ -174,18 +172,16 @@ export class ChatService {
     const rooms = await this.roomModel.find().skip(offset).limit(limit);
     const result = await Promise.all(
       rooms.map(async (room) => {
-        const lastMsgSent = (
-          await this.chatModel
-            .findById(room._id)
-            .sort({ createdAt: 'descending' })
-            .limit(1)
-        ).createdAt;
+        const lastMsgSent = await this.chatModel
+          .find({ roomId: String(room._id) })
+          .sort({ createdAt: 'descending' })
+          .limit(1);
         return {
           roomId: room._id,
           name: room.name,
           tags: room.tags,
           size: room.participants.length,
-          lastMsgSent: lastMsgSent,
+          lastMsgSent: lastMsgSent[0] ? lastMsgSent[0].createdAt : null,
         } as ChatResDto;
       })
     );
@@ -200,10 +196,9 @@ export class ChatService {
     const result = await Promise.all(
       roomIds.map(async (roomId) => {
         const lastMsgSent = await this.chatModel
-          .findOne({ roomId: roomId })
+          .find({ roomId: roomId })
           .sort({ createdAt: 'descending' })
           .limit(1);
-        this.logger.log(lastMsgSent);
         const room = await this.roomModel
           .findById(roomId)
           .skip(offset)
@@ -213,7 +208,7 @@ export class ChatService {
           name: room.name,
           tags: room.tags,
           size: room.participants.length,
-          lastMsgSent: lastMsgSent.createdAt,
+          lastMsgSent: lastMsgSent[0] ? lastMsgSent[0].createdAt : null,
         } as ChatResDto;
       })
     );
