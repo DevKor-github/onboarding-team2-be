@@ -1,5 +1,4 @@
 import { Types } from 'mongoose';
-import { Chat } from '../schemas/chat.schema';
 
 export class CreateRoomDto {
   creator: Types.ObjectId;
@@ -68,4 +67,5 @@ export class ChatResDto {
   name: string;
   tags: string[];
   size: number;
+  lastMsgSent: Date;
 }

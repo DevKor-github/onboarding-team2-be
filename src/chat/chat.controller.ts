@@ -143,7 +143,7 @@ export class ChatController {
     return this.chatService.markMessagesAsRead(data);
   }
 
-  @Get('room/total-chat')
+  @Get('room/total-chat/:offset&:limit')
   @ApiTags('Chat Room')
   @ApiParam({
     name: 'offset',
@@ -154,10 +154,10 @@ export class ChatController {
     type: Number,
   })
   async getTotalChat(@Param() query: GetChatReqDto): Promise<ChatResDto[]> {
-    return this.chatService.getTotalChat(query);
+    return await this.chatService.getTotalChat(query);
   }
 
-  @Get('room/joined-chat')
+  @Get('room/joined-chat/:offset&:limit')
   @ApiTags('Chat Room')
   @ApiParam({
     name: 'offset',
@@ -173,6 +173,6 @@ export class ChatController {
   ): Promise<ChatResDto[]> {
     const userId = req.user._id;
     const roomIds = (await this.userService.findOne(userId)).chats;
-    return this.chatService.getJoinChat(roomIds, query);
+    return await this.chatService.getJoinChat(roomIds, query);
   }
 }
